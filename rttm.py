@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 import sys
+import numpy as np
 
 from click import FileError
 
@@ -66,10 +67,26 @@ class RttmSeq:
 
         return ""
 
+
     def write(self, filename):
         check_rttm_filename(filename)
         with open(filename, "w") as file:
             self.__str__(end=" ", file=file, header=False)
+
+
+    def get_audio_segments(self, audio, sample_rate, max_length):
+        speech_segments = []
+
+        for seg in self.sequence:
+            start = int(seg.tbeg*sample_rate)
+            end = int(start + seg.tdur*sample_rate)
+            length = end - start
+            n = length // max_length + 1
+            subsegments = np.array_split(audio[start:end], n)
+            for subsegment in subsegments:
+                speech_segments.append(subsegment)
+
+        return speech_segments
 
 
 def read_rttm(filename):
