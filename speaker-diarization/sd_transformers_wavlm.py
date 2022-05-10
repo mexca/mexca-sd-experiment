@@ -1,35 +1,30 @@
-
-from datasets import load_dataset
-from rttm import read_rttm
+""" Encode speaker representations in AMI test data set using transformers WavLM """
+from default_parser import get_default_parser
+from speaker_representation import load_dataset_from_args, encode_speakers
 from transformers import Wav2Vec2FeatureExtractor, WavLMForXVector
-import os
 import torch
 
-DIR = "speaker-diarization"
-
-RTTM_DIR = os.path.join("voice-activity-detection", "results", "speechbrain")
-
-MAX_LENGTH = 20
+parser = get_default_parser()
+args = parser.parse_args()
 
 model = WavLMForXVector.from_pretrained('microsoft/wavlm-base')
 
 feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(
     'microsoft/wavlm-base-sv')
 
-ami = load_dataset("ami", "microphone-single", split=["test"])[0]
+data = load_dataset_from_args(args.dataset)
 
-for i, sample in enumerate(ami):
-    filename = sample["file"]
-    sample_rate = sample["audio"]["sampling_rate"]
-    rttm_seq = read_rttm(os.path.join(
-        RTTM_DIR, f"sb_ami_micro_test_sample_{i}.rttm"))
-    assert rttm_seq.sequence[0].file == filename
-    audio_segments = rttm_seq.get_audio_segments(
-        sample["audio"]["array"], sample_rate, max_length=MAX_LENGTH*sample_rate)
-    inputs = feature_extractor(audio_segments, sampling_rate=sample_rate,
-                               padding=True, do_normalize=True, return_tensors="pt")
-    with torch.no_grad():
-        embeddings = model(**inputs).embeddings.squeeze()
-    torch.save(embeddings, os.path.join(DIR, "embeddings",
-               "transformers-wavlm", f"tr_wavlm_ami_micro_test_{i}.pt"))
-    print(f"Processed sample {i}: {filename}")
+
+def encode_segments(audio_segments, sample_rate):
+    embeddings = torch.empty((len(audio_segments), 512))
+
+    for j, segment in enumerate(audio_segments):
+        inputs = feature_extractor(
+            segment, sampling_rate=sample_rate, padding=True, do_normalize=True, return_tensors="pt")
+        with torch.no_grad():
+            embeddings[j, :] = model(**inputs).embeddings.squeeze()
+
+    return embeddings
+
+
+encode_speakers(data, args, "transformers-wavlm", encode_segments)
