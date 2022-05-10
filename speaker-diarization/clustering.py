@@ -2,6 +2,7 @@
 from pyannote.core import Segment, Annotation
 from rttm import read_rttm
 from sklearn.cluster import SpectralClustering, AgglomerativeClustering, KMeans
+from speaker_representation import load_speech_sequences
 import argparse
 import os
 import torch
@@ -73,16 +74,6 @@ def convert_rttm_annotation(rttm_seq):
         annotation[Segment(seg.tbeg, seg.tbeg+seg.tdur)] = seg.name
 
     return annotation
-
-
-def load_speech_sequences(vad_dir):
-    rttm_seqs = []
-
-    with os.scandir(vad_dir) as filenames:
-        for filename in filenames:
-            rttm_seqs.append(read_rttm(filename.path))
-
-    return rttm_seqs
 
 
 def load_speaker_embeddings(res_dirs, base_dir):
