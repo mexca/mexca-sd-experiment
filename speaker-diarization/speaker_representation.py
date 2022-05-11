@@ -31,6 +31,15 @@ def get_dir_label(dir_name):
     return dir_labels[dir_name]
 
 
+def get_vad_label(vad_name):
+    vad_labels = {
+        "speechbrain": "sb",
+        "pyannote": "pa"
+    }
+
+    return vad_labels[vad_name]
+
+
 def load_speech_sequences(vad_dir):
     rttm_seqs = []
 
@@ -44,6 +53,7 @@ def load_speech_sequences(vad_dir):
 def encode_speakers(data, args, pipeline, encode_fun):
     file_indices = get_file_indices(args)
     rttm_seqs = load_speech_sequences(args.vad_dir)
+    vad_name = os.path.split(args.vad_dir)[-1]
 
     for i, sample in enumerate(data):
         if i in file_indices:
@@ -55,5 +65,5 @@ def encode_speakers(data, args, pipeline, encode_fun):
                 sample["audio"]["array"], sample_rate, max_length=args.max_length*sample_rate)
             embeddings = encode_fun(audio_segments, sample_rate)
             torch.save(embeddings, os.path.join(args.base_dir, "embeddings",
-                       pipeline, f"{get_dir_label(pipeline)}_{args.dataset}_{i}.pt"))
+                       pipeline, f"{get_dir_label(pipeline)}_{get_vad_label(vad_name)}_{args.dataset}_{i}.pt"))
             print(f"Processed sample {i}: {filename}")
