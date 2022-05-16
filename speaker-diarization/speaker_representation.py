@@ -60,7 +60,7 @@ def encode_speakers(data, args, pipeline, encode_fun):
             filename = sample["file"]
             sample_rate = sample["audio"]["sampling_rate"]
             rttm_seq = rttm_seqs[i]
-            assert rttm_seq.sequence[0].file == filename
+            assert os.path.split(os.path.normpath(rttm_seq.sequence[0].file))[-1] == os.path.split(os.path.normpath(filename))[-1]
             audio_segments = rttm_seq.get_audio_segments(
                 sample["audio"]["array"], sample_rate, max_length=args.max_length*sample_rate)
             embeddings = encode_fun(audio_segments, sample_rate)
