@@ -84,20 +84,32 @@ def duration_selection(segments, threshold):
     return segments_filtered
 
 # function to merge segments whose intersegment interval is below a threshold
-def merge_segments(segments, threshold):
-    merged_segments = []
-    for index, segment in enumerate(segments[:-1]): # from first to second-to-last
-        end = (segment.tbeg + segment.tdur) # end of first segment
-        merge = (segments[index+1].tbeg - end) > threshold
-        if merge: 
-            joint_segment = RttmObj(
-                type=segment.type,
-                file=segment.file,
-                chnl=segment.chnl,
-                tbeg=float(segment.tbeg), #beginning of fist segment
-                tdur=float(segment.tdur + segments[index+1].tdur) #duration 1st segment + duration 2nd segment
-            )
-            merged_segments.append(joint_segment)
+def merge_segments(segments, threshold, include_gaps = True):
+    merged_segments = [segments[0]]
+    for index, segment in enumerate(segments[1:]):
+        end = (merged_segments[-1].tbeg + merged_segments[-1].tdur) # end of first segment
+        gap_dur = (segment.tbeg - end)
+        merge = gap_dur <= threshold
+        if merge:
+            if include_gaps:  
+                joint_segment = RttmObj(
+                    type=segment.type,
+                    file=segment.file,
+                    chnl=segment.chnl,
+                    tbeg=float(merged_segments[-1].tbeg), #beginning of fist segment
+                    tdur=float(merged_segments[-1].tdur + gap_dur + segment.tdur) #duration 1st segment + gap + duration 2nd segment
+                )
+            else:
+                joint_segment = RttmObj(
+                    type=segment.type,
+                    file=segment.file,
+                    chnl=segment.chnl,
+                    tbeg=float(merged_segments[-1].tbeg), #beginning of fist segment
+                    tdur=float(merged_segments[-1].tdur + segment.tdur) #duration 1st segment + duration 2nd segment
+                )
+            merged_segments[-1] = joint_segment
+        else:
+            merged_segments.append(segment)
     return merged_segments
 
 # threshold arguments
