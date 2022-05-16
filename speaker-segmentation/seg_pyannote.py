@@ -128,9 +128,9 @@ for i, sample in enumerate(data):
             tdur=float(seg.end - seg.start)
         ) for seg in result.itersegments()]
         
-        filtered_segments = duration_selection(segments, filter_th) # remove short segments
-        merged_segments = merge_segments(seg_filtered, merge_th) # merge close segments
-        RttmSeq(merged_segments).write(os.path.join(args.base_dir, "results",
+        merged_segments = merge_segments(segments, merge_th) # merge close segments first
+        filtered_segments = duration_selection(merged_segments, filter_th) # then remove short segments
+        RttmSeq(filtered_segments).write(os.path.join(args.base_dir, "results",
                                              "pyannote", f"pa_ami_micro_test_sample_{i}.rttm"))
         print(f"Processed sample {i}: {filename}")
     
