@@ -35,7 +35,7 @@ def get_vad_label(vad_name):
     vad_labels = {
         os.path.join("voice-activity-detection", "results", "speechbrain"): "sb",
         os.path.join("voice-activity-detection", "results", "pyannote"): "pa",
-        os.path.join("speaker-segmentationi", "results", "pyannote"): "pa-seg"
+        os.path.join("speaker-segmentation", "results", "pyannote"): "pa-seg"
     }
 
     return vad_labels[vad_name]
