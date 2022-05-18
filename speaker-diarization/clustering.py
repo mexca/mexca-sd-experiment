@@ -1,8 +1,10 @@
 """ Cluster speaker representations and assign speaker labels """
+from types import new_class
+from numpy import indices
 from pyannote.core import Segment, Annotation
 from rttm import read_rttm
 from sklearn.cluster import SpectralClustering, AgglomerativeClustering, KMeans
-from speaker_representation import load_speech_sequences
+from speaker_representation import load_speech_sequence, get_file_indices
 import argparse
 import os
 import torch
@@ -50,10 +52,22 @@ parser.add_argument(
 parser.add_argument(
     "--speaker-labels",
     nargs="+",
-    default=["A", "B", "C", "D"],
+    default=["A", "B", "C", "D", "E"],
     type=str,
     help="list with speaker labels",
     dest="speaker_labels"
+)
+parser.add_argument(
+    "--files-is-list",
+    action="store_false",
+    help="whether the files argument is a range or list of indices",
+    dest="files_is_range"
+)
+parser.add_argument(
+    "files",
+    nargs="+",
+    type=int,
+    help="indices of files to be processed"
 )
 
 args = parser.parse_args()
@@ -76,21 +90,6 @@ def convert_rttm_annotation(rttm_seq):
     return annotation
 
 
-def load_speaker_embeddings(res_dirs, base_dir):
-    embeddings = {}
-
-    for model in res_dirs:
-        embs = []
-        with os.scandir(os.path.join(base_dir, "embeddings", model)) as filenames:
-            for filename in filenames:
-                emb = torch.load(filename.path)
-                embs.append(emb)
-
-        embeddings[model] = embs
-
-    return embeddings
-
-
 def average_subsegment_embeddings(rttm_seq, embeddings):
     splits = []
 
@@ -109,12 +108,23 @@ def average_subsegment_embeddings(rttm_seq, embeddings):
     return new_embeddings
 
 
+def load_speaker_embeddings(model, base_dir, index):
+    with os.scandir(os.path.join(base_dir, "embeddings", model)) as filenames:
+        for filename in filenames:
+            if int(filename.name.split("_")[-1].split(".")[0]) == index:
+                embeddings = torch.load(filename.path)
+                return embeddings
+
+
 def cluster_speaker_embeddings(args, classifier_labels):
     dir_labels = get_dir_labels(args.res_dirs, args.pipeline_labels)
+    indices = get_file_indices(args)
 
     for model in args.res_dirs:
-        for i, emb in enumerate(embeddings[model]):
-            new_embeddings = average_subsegment_embeddings(rttm_seqs[i], emb)
+        for i in indices:
+            embeddings = load_speaker_embeddings(model, args.base_dir, i)
+            rttm_seq = load_speech_sequence(args.vad_dir, i)
+            new_embeddings = average_subsegment_embeddings(rttm_seq, embeddings)
 
             for cluster_method in classifier_labels.keys():
                 classifier = classifier_labels[cluster_method](
@@ -122,11 +132,11 @@ def cluster_speaker_embeddings(args, classifier_labels):
                 num_labels = classifier.fit_predict(new_embeddings)
                 spk_labels = [args.speaker_labels[i] for i in num_labels]
 
-                for j, seg in enumerate(rttm_seqs[i].sequence):
+                for j, seg in enumerate(rttm_seq.sequence):
                     seg.name = spk_labels[j]
 
-                rttm_seqs[i].write(os.path.join(args.base_dir, "results", model,
-                                   f"{cluster_method}_{dir_labels[model]}_{args.dataset}_sample_{i}.rttm"))
+                rttm_seq.write(os.path.join(args.base_dir, "results", model,
+                                            f"{cluster_method}_{dir_labels[model]}_{args.dataset}_sample_{i}.rttm"))
 
 
 classifier_labels = {
@@ -134,9 +144,5 @@ classifier_labels = {
     "ac": AgglomerativeClustering,
     "km": KMeans
 }
-
-rttm_seqs = load_speech_sequences(args.vad_dir)
-
-embeddings = load_speaker_embeddings(args.res_dirs, args.base_dir)
 
 cluster_speaker_embeddings(args, classifier_labels)
