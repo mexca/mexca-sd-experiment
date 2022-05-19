@@ -24,7 +24,7 @@ parser.add_argument(
     default=["speechbrain-ecapa-tdnn",
              "transformers-unisat", "transformers-wavlm"],
     type=str,
-    help="list of pipeline directory names within the base directory",
+    help="list of pipeline directory names within the results directory",
     dest="res_dirs"
 )
 parser.add_argument(
@@ -33,6 +33,13 @@ parser.add_argument(
     type=str,
     help="directory containing .rttm files with speech segments",
     dest="vad_dir"
+)
+parser.add_argument(
+    "--ref-dir",
+    default=os.path.join("speaker-diarization", "results", "reference"),
+    type=str,
+    help="directory containing .rttm files with ground truth speech segments",
+    dest="ref_dir"
 )
 parser.add_argument(
     "--pipeline-labels",
@@ -48,14 +55,6 @@ parser.add_argument(
     type=str,
     help="dataset on which speaker diarization is performed",
     dest="dataset"
-)
-parser.add_argument(
-    "--speaker-labels",
-    nargs="+",
-    default=["A", "B", "C", "D", "E"],
-    type=str,
-    help="list with speaker labels",
-    dest="speaker_labels"
 )
 parser.add_argument(
     "--files-is-list",
@@ -108,6 +107,12 @@ def average_subsegment_embeddings(rttm_seq, embeddings):
     return new_embeddings
 
 
+def get_reference_speakers(ref_dir, index):
+    rttm_seq = load_speech_sequence(ref_dir, index)
+    speakers = [seg.name for seg in rttm_seq.sequence]
+    return list(set(speakers))
+
+
 def load_speaker_embeddings(model, base_dir, index):
     with os.scandir(os.path.join(base_dir, "embeddings", model)) as filenames:
         for filename in filenames:
@@ -122,15 +127,16 @@ def cluster_speaker_embeddings(args, classifier_labels):
 
     for model in args.res_dirs:
         for i in indices:
+            speaker_labels = get_reference_speakers(args.ref_dir, i)
             embeddings = load_speaker_embeddings(model, args.base_dir, i)
             rttm_seq = load_speech_sequence(args.vad_dir, i)
             new_embeddings = average_subsegment_embeddings(rttm_seq, embeddings)
 
             for cluster_method in classifier_labels.keys():
                 classifier = classifier_labels[cluster_method](
-                    len(args.speaker_labels))
+                    len(speaker_labels))
                 num_labels = classifier.fit_predict(new_embeddings)
-                spk_labels = [args.speaker_labels[i] for i in num_labels]
+                spk_labels = [speaker_labels[i] for i in num_labels]
 
                 for j, seg in enumerate(rttm_seq.sequence):
                     seg.name = spk_labels[j]
