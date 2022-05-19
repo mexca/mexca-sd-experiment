@@ -38,7 +38,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 subprocess.run([
-    "python", "speaker-diarization\sd_speechbrain_ecapa_tdnn.py",
+    "python", os.path.join("speaker-diarization", "sd_speechbrain_ecapa_tdnn.py"),
     "--bdir", args.base_dir,
     "--vdir", args.vad_dir,
     "--max-length", str(args.max_length),
@@ -48,7 +48,7 @@ subprocess.run([
 )
 
 subprocess.run([
-    "python", "speaker-diarization\sd_transformers_unisat.py",
+    "python", os.path.join("speaker-diarization", "sd_transformers_unisat.py"),
     "--bdir", args.base_dir,
     "--vdir", args.vad_dir,
     "--max-length", str(args.max_length),
@@ -58,7 +58,7 @@ subprocess.run([
 )
 
 subprocess.run([
-    "python", "speaker-diarization\sd_transformers_wavlm.py",
+    "python", os.path.join("speaker-diarization", "sd_transformers_wavlm.py"),
     "--bdir", args.base_dir,
     "--vdir", args.vad_dir,
     "--max-length", str(args.max_length),
