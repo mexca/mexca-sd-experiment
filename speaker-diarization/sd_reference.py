@@ -1,21 +1,39 @@
 
-from datasets import load_dataset
+from custom_datasets import load_dataset_from_args
 from rttm import RttmSeq, RttmObj
+import argparse
 import os
 
-DIR = "speaker-diarization"
+parser = argparse.ArgumentParser(description="Encode speaker representations.")
+parser.add_argument(
+    "--bdir",
+    default="speaker-diarization",
+    type=str,
+    help="base directory for speaker diarization",
+    dest="base_dir"
+)
+parser.add_argument(
+    "--dataset",
+    default="ami_micro_test",
+    type=str,
+    help="dataset on which speaker diarization is performed",
+    dest="dataset"
+)
+args = parser.parse_args()
 
-ami = load_dataset("ami", "microphone-single", split=["test"])[0]
+data = load_dataset_from_args(args.dataset)
 
-for i, sample in enumerate(ami):
+for i, sample in enumerate(data):
     filename = sample["file"]
     segments = [RttmObj(
-        type = "SPEAKER",
-        file = sample["file"],
-        chnl = 1,
-        tbeg = float(sample["segment_start_times"][i]),
-        tdur = float(sample["segment_end_times"][i]-sample["segment_start_times"][i]),
-        name = sample["segment_speakers"][i]
-    ) for i, _ in enumerate(sample["segment_ids"])]
-    RttmSeq(segments).write(os.path.join(DIR, "results", "reference", f"ref_ami_micro_test_sample_{i}.rttm"))
+        type="SPEAKER",
+        file=sample["file"],
+        chnl=1,
+        tbeg=float(sample["segment_start_times"][j]),
+        tdur=float(sample["segment_end_times"][j] -
+                   sample["segment_start_times"][j]),
+        name=sample["segment_speakers"][j]
+    ) for j, _ in enumerate(sample["segment_ids"])]
+    RttmSeq(segments).write(os.path.join(args.base_dir, "results",
+                                         "reference", f"ref_{args.dataset}_sample_{i}.rttm"))
     print(f"Processed sample {i}: {filename}")

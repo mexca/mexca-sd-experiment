@@ -1,6 +1,7 @@
 """ Encode speaker representations in AMI test data set using transformers UniSpeech-SAT """
+from custom_datasets import load_dataset_from_args
 from default_parser import get_default_parser
-from speaker_representation import load_dataset_from_args, encode_speakers
+from speaker_representation import encode_speakers
 from transformers import Wav2Vec2FeatureExtractor, UniSpeechSatForXVector
 import torch
 

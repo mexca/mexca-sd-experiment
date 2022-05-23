@@ -1,24 +1,8 @@
 """ Functions for encoding speaker representations for diarization """
-from datasets import load_dataset
+from custom_datasets import get_file_indices
 from rttm import read_rttm
 import os
 import torch
-
-
-def load_dataset_from_args(args_dataset):
-    if args_dataset == "ami_micro_test":
-        return load_dataset("ami", "microphone-single", split=["test"])[0]
-    else:
-        raise Exception("Please specify a valid dataset argument")
-
-
-def get_file_indices(args):
-    if args.files_is_range:
-        file_indices = range(args.files[0], args.files[1])
-    else:
-        file_indices = args.files
-
-    return file_indices
 
 
 def get_dir_label(dir_name):
