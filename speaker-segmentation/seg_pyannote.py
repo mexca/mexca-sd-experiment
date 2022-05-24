@@ -1,5 +1,5 @@
 """ Detect speaker segments in AMI test set using pyannote """
-from datasets import load_dataset
+from custom_datasets import load_dataset_from_args, get_file_indices
 from pyannote.audio.pipelines import SpeakerSegmentation
 from rttm import RttmSeq, RttmObj
 import argparse
@@ -63,15 +63,9 @@ HYPER_PARAMETERS = {
 pipeline = SpeakerSegmentation(segmentation="pyannote/segmentation")
 pipeline.instantiate(HYPER_PARAMETERS)
 
-if args.dataset == "ami_micro_test":
-    data = load_dataset("ami", "microphone-single", split=["test"])[0]
-else:
-    raise Exception("Please specify a valid dataset argument")
+data = load_dataset_from_args(args.dataset)
 
-if args.files_is_range:
-    file_indices = range(args.files[0], args.files[1])
-else:
-    file_indices = args.files
+file_indices = get_file_indices(args.files)
 
 
 # function to filter out segments whose duration is below a threshold
