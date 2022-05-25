@@ -1,11 +1,19 @@
 """Storing and writing data in RTTM format"""
 
+<<<<<<< Updated upstream
+=======
+from click import FileError
+from copy import deepcopy
+>>>>>>> Stashed changes
 from dataclasses import dataclass, field
 import sys
 import numpy as np
 
+<<<<<<< Updated upstream
 from click import FileError
 
+=======
+>>>>>>> Stashed changes
 
 @dataclass
 class RttmObj:
@@ -32,6 +40,23 @@ class RttmObj:
         self.check_attrs()
 
 
+<<<<<<< Updated upstream
+=======
+    def __copy__(self):
+        return type(self)(
+            self.type,
+            self.file,
+            self.chnl,
+            self.tbeg,
+            self.tdur,
+            self.ortho,
+            self.stype,
+            self.name,
+            self.conf
+        )
+
+
+>>>>>>> Stashed changes
 def get_default_header():
     return ["type", "file", "chnl", "tbeg", "tdur", "ortho", "stype", "name", "conf"]
 
@@ -47,6 +72,25 @@ class RttmSeq:
     sequence: list[RttmObj]
     header: list[str] = field(default_factory=get_default_header)
 
+<<<<<<< Updated upstream
+=======
+
+    def __copy__(self):
+        return type(self)(self.sequence, self.header)
+
+
+    def __deepcopy__(self, memo):
+        id_self = id(self)
+        _copy = memo.get(id_self)
+        if _copy is None:
+            _copy = type(self)(
+                deepcopy(self.sequence, memo), 
+                deepcopy(self.header, memo))
+            memo[id_self] = _copy 
+        return _copy
+
+
+>>>>>>> Stashed changes
     def __str__(self, end="\t", file=sys.stdout, header=True):
         if header:
             for h in self.header:
@@ -68,6 +112,19 @@ class RttmSeq:
         return ""
 
 
+<<<<<<< Updated upstream
+=======
+    def sort(self):
+        indices = np.argsort([seg.tbeg for seg in self.sequence])
+
+        sorted_segments = [self.sequence[i] for i in indices]
+        
+        self.sequence = sorted_segments
+
+        return self
+
+
+>>>>>>> Stashed changes
     def write(self, filename):
         check_rttm_filename(filename)
         with open(filename, "w") as file:
