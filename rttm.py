@@ -1,19 +1,11 @@
 """Storing and writing data in RTTM format"""
 
-<<<<<<< Updated upstream
-=======
 from click import FileError
-from copy import deepcopy
->>>>>>> Stashed changes
+from copy import copy, deepcopy
 from dataclasses import dataclass, field
+import warnings
 import sys
 import numpy as np
-
-<<<<<<< Updated upstream
-from click import FileError
-
-=======
->>>>>>> Stashed changes
 
 @dataclass
 class RttmObj:
@@ -40,8 +32,6 @@ class RttmObj:
         self.check_attrs()
 
 
-<<<<<<< Updated upstream
-=======
     def __copy__(self):
         return type(self)(
             self.type,
@@ -56,7 +46,6 @@ class RttmObj:
         )
 
 
->>>>>>> Stashed changes
 def get_default_header():
     return ["type", "file", "chnl", "tbeg", "tdur", "ortho", "stype", "name", "conf"]
 
@@ -71,9 +60,6 @@ def check_rttm_filename(filename):
 class RttmSeq:
     sequence: list[RttmObj]
     header: list[str] = field(default_factory=get_default_header)
-
-<<<<<<< Updated upstream
-=======
 
     def __copy__(self):
         return type(self)(self.sequence, self.header)
@@ -90,7 +76,6 @@ class RttmSeq:
         return _copy
 
 
->>>>>>> Stashed changes
     def __str__(self, end="\t", file=sys.stdout, header=True):
         if header:
             for h in self.header:
@@ -112,8 +97,11 @@ class RttmSeq:
         return ""
 
 
-<<<<<<< Updated upstream
-=======
+    def get_duration(self):
+        last_segment = self.sort().sequence[-1]
+        return float(last_segment.tbeg + last_segment.tdur)
+
+
     def sort(self):
         indices = np.argsort([seg.tbeg for seg in self.sequence])
 
@@ -124,7 +112,33 @@ class RttmSeq:
         return self
 
 
->>>>>>> Stashed changes
+    def split(self, time_sep):
+        duration = self.get_duration()
+        split_sequences = []
+
+        for i, end in enumerate(time_sep + [duration]):
+            subsequence = []
+
+            if i == 0:
+                start = 0.0
+            else:
+                start = time_sep[i-1]
+
+            for seg in self.sort().sequence:
+                tend = seg.tbeg + seg.tdur
+                if tend <= end and seg.tbeg >= start:
+                    seg_copy = copy(seg)
+                    seg_copy.tbeg = seg.tbeg - start
+                    subsequence.append(seg_copy)
+
+            split_sequences.append(subsequence)
+
+        if len(self.sequence) != sum([len(seq) for seq in split_sequences]):
+            warnings.warn("The summed lengths of the split sequences differ from the length of the origina sequence. This can lead to missing/additional segments in the split sequences.")
+
+        return [RttmSeq(seq) for seq in split_sequences]
+
+
     def write(self, filename):
         check_rttm_filename(filename)
         with open(filename, "w") as file:
