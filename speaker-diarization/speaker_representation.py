@@ -25,10 +25,10 @@ def get_vad_label(vad_name):
     return vad_labels[vad_name]
 
 
-def load_speech_sequence(vad_dir, index):
+def load_speech_sequence(vad_dir, dataset, index):
     with os.scandir(vad_dir) as filenames:
         for filename in filenames:
-            if int(filename.name.split("_")[-1].split(".")[0]) == index:
+            if int(filename.name.split("_")[-1].split(".")[0]) == index and filename.name.find(dataset):
                 rttm_seq = read_rttm(filename.path)
                 return rttm_seq
 
@@ -40,7 +40,7 @@ def encode_speakers(data, args, pipeline, encode_fun):
         if i in file_indices:
             filename = sample["file"]
             sample_rate = sample["audio"]["sampling_rate"]
-            rttm_seq = load_speech_sequence(args.vad_dir, i)
+            rttm_seq = load_speech_sequence(args.vad_dir, args.dataset, i)
             assert os.path.split(os.path.normpath(rttm_seq.sequence[0].file))[-1] == os.path.split(os.path.normpath(filename))[-1]
             audio_segments = rttm_seq.get_audio_segments(
                 sample["audio"]["array"], sample_rate, max_length=args.max_length*sample_rate)

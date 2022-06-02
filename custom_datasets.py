@@ -4,15 +4,21 @@ import torchaudio
 
 
 def load_ded21_dataset(filepath):
-    audio_path = os.path.join(filepath, "ded21_audio.wav")
-    signal, sample_rate = torchaudio.load(audio_path)
-    dataset = [{
-        "file": audio_path,
-        "audio": {
-            "array": signal,
-            "sampling_rate": sample_rate
-        }
-    }]
+    with os.scandir(filepath) as filenames:
+        nr_files = len([filename for filename in filenames if filename.name.split(".")[-1] == "rttm"])
+
+    dataset = []
+
+    for i in range(nr_files):
+        audio_path = os.path.join(filepath, f"ded21_audio_{i}.wav")
+        signal, sample_rate = torchaudio.load(audio_path)
+        dataset.append({
+            "file": audio_path,
+            "audio": {
+                "array": signal.squeeze(),
+                "sampling_rate": sample_rate
+            }
+        })
 
     return dataset
 
