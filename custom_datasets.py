@@ -15,7 +15,7 @@ def load_ded21_dataset(filepath):
         dataset.append({
             "file": audio_path,
             "audio": {
-                "array": signal,
+                "array": signal.squeeze(),
                 "sampling_rate": sample_rate
             }
         })

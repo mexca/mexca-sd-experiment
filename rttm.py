@@ -139,6 +139,17 @@ class RttmSeq:
         return [RttmSeq(seq) for seq in split_sequences]
 
 
+    def append(self, new_sequence):
+        new_sequence_copy = deepcopy(new_sequence)
+        last_segment = self.sort().sequence[-1]
+        start = last_segment.tbeg + last_segment.tdur
+        for seg in new_sequence_copy.sequence:
+            seg.tbeg += start
+            self.sequence.append(seg)
+
+        return self
+
+
     def write(self, filename):
         check_rttm_filename(filename)
         with open(filename, "w") as file:
